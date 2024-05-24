@@ -5,7 +5,7 @@ import requests
 import os
 import random
 
-TOKEN = '6746624248:AAHpupf3BvhtK3TmH6TE79kEsdMfe2U9GV0'
+TOKEN = 'private'
 bot = telebot.TeleBot(TOKEN)
 
 
@@ -52,7 +52,7 @@ def handle_text_message(message, filename):
                            'CAACAgIAAxkBAAEFnUJmTkkRPRu3jBOeQxpS-No2ccABKgACQwEAAs0bMAiAvonYgQO9kzUE')
     text = message.text
 
-    url = 'http://68.183.86.226:8020/tts_to_audio/'
+    url = 'http://0.0.0.0:000/tts_to_audio/'
     params = {
         "text": text,
         "speaker_wav": str(filename),
