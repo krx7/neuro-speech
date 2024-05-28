@@ -4,7 +4,7 @@ import telebot
 import requests
 import os
 import random
-from pydub import AudioSegment
+
 TOKEN = 'private'
 bot = telebot.TeleBot(TOKEN)
 
