@@ -91,6 +91,7 @@ def handle_voice_message(message):
     bot.register_next_step_handler(message, handle_text_message, filename, meesg)
 
 def handle_text_message(message, filename, meesg):
+  if message.content_type == 'text':
     keyboard3 = telebot.types.InlineKeyboardMarkup()
     button_next = telebot.types.InlineKeyboardButton(text="\U0001F195 Сгенерировать новое сообщение",
                                                      callback_data='new')
@@ -132,5 +133,7 @@ def handle_text_message(message, filename, meesg):
 
             bot.send_message(message.chat.id, 'Ошибка. Попробуйте еще раз или позже.\nРекомендации для записи голосового сообщения - /recom\nИнструкция по использованию - /help')
             bot.send_message(admin_id, f'Error in api: {traceback.format_exc()}')
+      else:
+  bot.send_message(message.chat.id, '*Сообщение должно быть в виде текста*\n\nОтправьте голосовое сообщение еще раз и далее введите текст', parse_mode='Markdown')
             
 bot.polling()
