@@ -4,14 +4,36 @@ import telebot
 import requests
 import os
 import random
+import traceback
 
-TOKEN = 'private'
+
+TOKEN = 'aWfewufjFociFssfohGj52jdjGhgklsFmcheefWdk32jfh'
 bot = telebot.TeleBot(TOKEN)
+admin_id = 777777777
+
+keyboard1 = telebot.types.InlineKeyboardMarkup()
+keyboard2 = telebot.types.InlineKeyboardMarkup()
+button_help = telebot.types.InlineKeyboardButton(text="\U00002705 Понятно",
+                                                     callback_data='delete_help')
+button_recom = telebot.types.InlineKeyboardButton(text="\U00002705 Понятно",
+                                                     callback_data='delete_recom')
+keyboard1.add(button_help)
+keyboard2.add(button_recom)
+
+@bot.callback_query_handler(func=lambda call: call.data == 'new')
+def new(call):
+    bot.send_message(call.message.chat.id, "Отправь голосовое сообщение в качестве примера\n*Инструкция по использованию:* /help\n*Рекомендации для записи:* /recom", parse_mode='Markdown')
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
+@bot.callback_query_handler(func=lambda call: call.data == 'delete_help')
+def del_help(call):
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
-
+@bot.callback_query_handler(func=lambda call: call.data == 'delete_recom')
+def del_recom(call):
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
 
@@ -19,33 +41,35 @@ bot = telebot.TeleBot(TOKEN)
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message,
-                 "Привет! Я - бот, который может проговорить любой текст любым голосом.\nПросто отправь мне голосовое сообщение с голосом, которым ты хочешь озвучить текст.")
+                 "\U0001F44B Привет! Я - бот, который может проговорить любой текст любым голосом.\nПросто отправь мне голосовое сообщение с голосом, которым ты хочешь озвучить текст.")
 
 
 @bot.message_handler(commands=['recom'])
-def send_welcome(message):
-    bot.reply_to(message,
-                 "Длительность голосового сообщения желательно 7-9 секунд. Убедитесь что в сообщении нет фоновых шумов или музыки, например, во многих фильмах есть тихая музыка, когда многие актеры разговаривают.\nЖелательно чтобы не было никаких больших пауз, пробелов или других звуков.\nУбедитесь, что сообщение не начинается и не заканчивается дышащими звуками (вдох/выдох и т.д.)")
+def send_recom(message):
+    bot.send_message(message.chat.id,
+                 "Длительность голосового сообщения желательно 7-9 секунд. Убедитесь что в сообщении нет фоновых шумов или музыки, например, во многих фильмах есть тихая музыка, когда многие актеры разговаривают.\nЖелательно чтобы не было никаких больших пауз, пробелов или других звуков.\nУбедитесь, что сообщение не начинается и не заканчивается дышащими звуками (вдох/выдох и т.д.)", reply_markup=keyboard2)
+
+
 
 
 
 @bot.message_handler(commands=['help'])
-def send_welcome(message):
-    bot.reply_to(message,
-                 "1. Отправьте голосовое сообщение в качестве примера для генерации\n(желательно посмотреть рекомендации по записи /recom)\n2. Напишите текст для генерации голосового сообщения. (Не больше 175 символов)\n3. Ожидайте отправки результата")
+def send_help(message):
+    bot.send_message(message.chat.id,
+                 "1. Отправьте голосовое сообщение в качестве примера для генерации\n(*желательно посмотреть рекомендации по записи /recom*)\n2. Напишите текст для генерации голосового сообщения. (Не больше 175 символов)\n3. Ожидайте отправки результата", reply_markup=keyboard1, parse_mode="Markdown")
 
-@bot.message_handler(func=lambda message: message.text == 'Сгенерировать голосовое сообщение')
-def handle_help_message(message):
-    markup = telebot.types.ReplyKeyboardRemove(selective=False)
-    bot.send_message(message.chat.id, 'Отправь голосовое сообщение в качестве примера.\n'
-                          'Рекомендации по записи: /recom', reply_markup=markup)
+
+
+
+@bot.message_handler(content_types=['text'])
+def handle_text(message):
+    bot.reply_to(message, 'Чтобы начать, отправь голосовое сообщение в качестве примера\nИнструкция по использованию: /help')
 
 
 
 
 @bot.message_handler(content_types=['voice'])
 def handle_voice_message(message):
-
     user_id = message.from_user.id
     random_ch = random.randint(1, 100000)
     filename = f'{str(user_id)}-{random_ch}'
@@ -54,39 +78,31 @@ def handle_voice_message(message):
     file_path = file_info.file_path
     downloaded_file = bot.download_file(file_path)
     audio_file_name = f'audio_{filename}.ogg'
-
     with open(audio_file_name, 'wb') as file:
         file.write(downloaded_file)
-
     subprocess.run(['ffmpeg', '-i', audio_file_name, '-ar', '22050', f'{filename}.wav'])
     os.remove(audio_file_name)
-
     source_dir = f"{filename}.wav"
     destination_dir = f"/root/speakers/{filename}.wav"
     shutil.move(source_dir, destination_dir)
 
-    bot.send_message(message.chat.id, "Отправь текст, который ты хочешь озвучить выбранным голосом.\n"
-                                      "Важно чтобы длина текста не превышала 175 символов.")
+    meesg = bot.send_message(message.chat.id, "*Введите текстовый запрос*\n\nОтправь текст, который ты хочешь озвучить выбранным голосом.\n"
+                                      "Важно чтобы длина текста не превышала 175 символов.", parse_mode="Markdown")
+    bot.register_next_step_handler(message, handle_text_message, filename, meesg)
 
-
-    bot.register_next_step_handler(message, handle_text_message, filename)
-
-
-
-def handle_text_message(message, filename):
-    keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    button_help = telebot.types.KeyboardButton(text="Сгенерировать голосовое сообщение")
-    keyboard.add(button_help)
+def handle_text_message(message, filename, meesg):
+    keyboard3 = telebot.types.InlineKeyboardMarkup()
+    button_next = telebot.types.InlineKeyboardButton(text="\U0001F195 Сгенерировать новое сообщение",
+                                                     callback_data='new')
+    keyboard3.add(button_next)
     text = message.text
     if len(message.text) > 175:
-        bot.send_message(message.chat.id, "Ошибка. Текст не должен превышать 175 символов.")
+        bot.send_message(message.chat.id, "Ошибка. Текст не должен превышать 175 символов.\nПопробуйте еще раз.")
     else:
-        mesg = bot.send_message(message.chat.id, 'Добавил в очередь на генерацию голосового сообщения')
+        mesg = bot.send_message(message.chat.id, '\U000023F3 Добавил в очередь на генерацию.')
         msg = bot.send_sticker(message.chat.id,
                                'CAACAgIAAxkBAAEFnUJmTkkRPRu3jBOeQxpS-No2ccABKgACQwEAAs0bMAiAvonYgQO9kzUE')
-
-
-        url = 'private'
+        url = 'http://aaa/tts_to_audio/'
         params = {
             "text": text,
             "speaker_wav": str(filename),
@@ -102,19 +118,19 @@ def handle_text_message(message, filename):
             voice = open(output_audio_file_name, 'rb')
             bot.send_voice(message.chat.id, voice)
             bot.send_message(message.chat.id,
-                             f'Результат генерации по запросу "{text}"', reply_markup=keyboard)
+                             f'Результат генерации по запросу "*{text}*"', parse_mode="Markdown", reply_markup=keyboard3)
             file.close()
+            bot.delete_message(message.chat.id, meesg.id)
             bot.delete_message(message.chat.id, msg.id)
             bot.delete_message(message.chat.id, mesg.id)
-            os.remove(f'/root/speakers/{filename}.wav')
 
+            os.remove(f'/root/speakers/{filename}.wav')
+            os.remove(f'/root/xt/output_audio_{filename}.wav')
+            os.remove(f'/root/xt/output_audio_{filename}.ogg')
 
         else:
-            print('Error converting text to audio')
+
             bot.send_message(message.chat.id, 'Ошибка. Попробуйте еще раз или позже.\nРекомендации для записи голосового сообщения - /recom\nИнструкция по использованию - /help')
-
-
-
-
-
+            bot.send_message(admin_id, f'Error in api: {traceback.format_exc()}')
+            
 bot.polling()
